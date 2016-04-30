@@ -4,4 +4,29 @@
 *.dll
 *.exe
 *.log
-.idea/*
+
+# Ignore Eclipse files
+.classpath
+.project
+.settings/
+
+# Ignore IntelliJ files
+.idea/
+*.iml
+*.iws
+
+# Ignore Mac files
+.DS_Store
+
+# Ignore Maven generated files
+log/
+target/
+
+# Ignore Netbeans generated files
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+nbactions.xml
+.nb-gradle/
