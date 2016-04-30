@@ -11,6 +11,7 @@ public class Parser {
     List<Token> tokens;
     Token primeiro;
     TreeSet<String> arvore;
+    int x;
     
     //pega a lista de tokens do tokenizer
     public void parse(List<Token> tokens){
