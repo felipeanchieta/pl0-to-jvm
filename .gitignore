@@ -1,2 +1,7 @@
-/JavaProject2/nbproject/private/
-/nbproject/private/
+*.class
+*.jar
+*.o
+*.dll
+*.exe
+*.log
+.idea/*
