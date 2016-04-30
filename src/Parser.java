@@ -1,521 +1,903 @@
-/* This class is responsible for the syntactic analysis (Token[] -> AST) */
-
-	package parserpl0;
-
-import java.util.List;
 import java.util.ArrayList;
-import java.io.*;
-import java.util.TreeSet;
+import java.util.List;
 
 public class Parser {
+
     List<Token> tokens;
-    Token primeiro;
-    TreeSet<String> arvore;
-    int x;
-    
-    //pega a lista de tokens do tokenizer
-    public void parse(List<Token> tokens){
+    Token lookahead;
+
+    public Parser(List<Token> tokens) {
         this.tokens = tokens;
-        primeiro = this.tokens.get(0);
-        arvore = new TreeSet<String>();
-        program();
-	//simbolo de finalizacao eh o $, por enquanto esta epsilon
-        if (primeiro.token != Token.CIPHER)
-            throw new ParserException("Simbolo esperado %s nao indetificado", primeiro);
+        nextToken();
     }
-    
-    //pega o proximo token 
-    private void nextToken(){
-        tokens.remove(0);
-        //retorna um $ pra demonstrar o fim
-        if (tokens.isEmpty())
-            primeiro = new Token(Token.CIPHER, "$");
+
+    //pega a lista de tokens do tokenizer
+    public void parse() throws ParserException {
+        Node root = main();
+    }
+
+    public void nextToken() {
+        lookahead = tokens.remove(0);
+        System.out.printf(lookahead.c + " ");
+    }
+
+    // Non-terminals
+    private Node main() throws ParserException {
+        Node node = new Node("MAIN");
+
+        node.children.add(programDecl(node));
+        node.children.add(mainBlock(node));
+        node.children.add(_period(node));
+
+        return node;
+    }
+
+    private Node programDecl(Node parent) throws ParserException {
+        Node node = new Node("PROGRAM_DECL");
+        node.parent = parent;
+
+        node.children.add(_program(node));
+        node.children.add(_id(node));
+        node.children.add(_sc(node));
+
+        return node;
+    }
+
+    private Node mainBlock(Node parent) throws ParserException {
+        Node node = new Node("MAIN_BLOCK");
+        node.parent = parent;
+
+        node.children.add(_begin(node));
+        node.children.add(mainCode(node));
+        node.children.add(_end(node));
+
+        return node;
+    }
+
+    private Node mainCode(Node parent) throws ParserException {
+        Node node = new Node("MAIN_CODE");
+        node.parent = parent;
+
+        switch (lookahead.type) {
+            case VAR:
+            case ID:
+            case CALL:
+            case PRINT:
+            case WHILE:
+            case IF:
+                node.children.add(stmt(node));
+                node.children.add(mainCode(node));
+                break;
+            case PROCEDURE:
+                node.children.add(declProcStmt(node));
+                node.children.add(mainCode(node));
+                break;
+            default:
+                //nextToken();
+        }
+
+        return node;
+    }
+
+    private Node block(Node parent) throws ParserException {
+        Node node = new Node("BLOCK");
+        node.parent = parent;
+
+        node.children.add(_begin(node));
+        node.children.add(code(node));
+        node.children.add(_end(node));
+
+        return node;
+    }
+
+    private Node code(Node parent) throws ParserException {
+        Node node = new Node("CODE");
+        node.parent = parent;
+
+        switch (lookahead.type) {
+            case VAR:
+            case ID:
+            case CALL:
+            case PRINT:
+            case WHILE:
+            case IF:
+                node.children.add(stmt(node));
+                node.children.add(code(node));
+                break;
+            default:
+                //nextToken();
+        }
+
+        return node;
+    }
+
+    private Node stmt(Node parent) throws ParserException {
+        Node node = new Node("STMT");
+        node.parent = parent;
+
+        switch (lookahead.type) {
+            case VAR:
+                node.children.add(declVarStmt(node));
+                break;
+            case ID:
+                node.children.add(attrStmt(node));
+                break;
+            case CALL:
+                node.children.add(callStmt(node));
+                break;
+            case PRINT:
+                node.children.add(printStmt(node));
+                break;
+            case WHILE:
+                node.children.add(whileStmt(node));
+                break;
+            case IF:
+                node.children.add(ifStmt(node));
+                break;
+        }
+
+        return node;
+    }
+
+    // statements
+    private Node declProcStmt(Node parent) throws ParserException {
+        Node node = new Node("DECL_PROC_STMT");
+        node.parent = parent;
+
+        node.children.add(_procedure(node));
+        node.children.add(_id(node));
+        node.children.add(_sc(node));
+        node.children.add(block(node));
+
+        return node;
+    }
+
+    private Node declVarStmt(Node parent) throws ParserException {
+        Node node = new Node("DECL_VAR_STMT");
+        node.parent = parent;
+
+        node.children.add(_var(node));
+        node.children.add(list(node));
+        node.children.add(_sc(node));
+
+        return node;
+    }
+
+    private Node list(Node parent) throws ParserException {
+        Node node = new Node("LIST");
+        node.parent = parent;
+
+        node.children.add(_id(node));
+        node.children.add(list_(node));
+
+        return node;
+    }
+
+    private Node list_(Node parent) throws ParserException {
+        Node node = new Node("LIST'");
+        node.parent = parent;
+
+        switch (lookahead.type) {
+            case COMMA:
+                node.children.add(_comma(node));
+                node.children.add(list(node));
+                break;
+            case ATTR_OP:
+                node.children.add(_attrOp(node));
+                node.children.add(list__(node));
+                break;
+            default:
+                //nextToken();
+        }
+
+        return node;
+    }
+
+    private Node list__(Node parent) throws ParserException {
+        Node node = new Node("LIST''");
+        node.parent = parent;
+
+        node.children.add(intExp(node));
+        node.children.add(list___(node));
+
+        return node;
+    }
+
+    private Node list___(Node parent) throws ParserException {
+        Node node = new Node("LIST'''");
+        node.parent = parent;
+
+        switch (lookahead.type) {
+            case COMMA:
+                node.children.add(_comma(node));
+                node.children.add(list(node));
+                break;
+            default:
+                //nextToken();
+        }
+
+        return node;
+    }
+
+    private Node attrStmt(Node parent) throws ParserException {
+        Node node = new Node("ATTR_STMT");
+        node.parent = parent;
+
+        node.children.add(_id(node));
+        node.children.add(_attrOp(node));
+        node.children.add(intExp(node));
+        node.children.add(_sc(node));
+
+        return node;
+    }
+
+    private Node callStmt(Node parent) throws ParserException {
+        Node node = new Node("CALL_STMT");
+        node.parent = parent;
+
+        node.children.add(_call(node));
+        node.children.add(_id(node));
+        node.children.add(_sc(node));
+
+        return node;
+    }
+
+    private Node printStmt(Node parent) throws ParserException {
+        Node node = new Node("PRINT_STMT");
+        node.parent = parent;
+
+        node.children.add(_print(node));
+        node.children.add(intExp(node));
+
+        return node;
+    }
+
+    private Node whileStmt(Node parent) throws ParserException {
+        Node node = new Node("WHILE_STMT");
+        node.parent = parent;
+
+        node.children.add(_while(node));
+        node.children.add(boolExp(node));
+        node.children.add(_do(node));
+        node.children.add(block(node));
+
+        return node;
+    }
+
+    private Node ifStmt(Node parent) throws ParserException {
+        Node node = new Node("IF_STMT");
+        node.parent = parent;
+
+        node.children.add(_if(node));
+        node.children.add(boolExp(node));
+        node.children.add(_then(node));
+        node.children.add(block(node));
+        node.children.add(elseStmt(node));
+
+        return node;
+    }
+
+    private Node elseStmt(Node parent) throws ParserException {
+        Node node = new Node("ELSE_STMT");
+        node.parent = parent;
+
+        switch (lookahead.type) {
+            case ELSE:
+                node.children.add(_else(node));
+                node.children.add(block(node));
+                break;
+            default:
+                //nextToken();
+        }
+
+        return node;
+    }
+
+    // integer expression
+    private Node intExp(Node parent) throws ParserException {
+        Node node = new Node("INT_EXP");
+        node.parent = parent;
+
+        node.children.add(term(node));
+        node.children.add(intExp_(node));
+
+        return node;
+    }
+
+    private Node intExp_(Node parent) throws ParserException {
+        Node node = new Node("INT_EXP'");
+        node.parent = parent;
+
+        switch (lookahead.type) {
+            case SUB_OP:
+                node.children.add(_subOp(node));
+                node.children.add(term(node));
+                node.children.add(intExp_(node));
+                break;
+            case SUM_OP:
+                node.children.add(_sumOp(node));
+                node.children.add(term(node));
+                node.children.add(intExp_(node));
+                break;
+            default:
+                //nextToken();
+        }
+
+        return node;
+    }
+
+    private Node term(Node parent) throws ParserException {
+        Node node = new Node("TERM");
+        node.parent = parent;
+
+        node.children.add(factor(node));
+        node.children.add(term_(node));
+
+        return node;
+    }
+
+    private Node term_(Node parent) throws ParserException {
+        Node node = new Node("TERM'");
+        node.parent = parent;
+
+        switch (lookahead.type) {
+            case DIV_OP:
+                node.children.add(_divOp(node));
+                node.children.add(factor(node));
+                node.children.add(term_(node));
+                break;
+            case MULT_OP:
+                node.children.add(_multOp(node));
+                node.children.add(factor(node));
+                node.children.add(term_(node));
+                break;
+            default:
+                //nextToken();
+        }
+
+        return node;
+    }
+
+    private Node factor(Node parent) throws ParserException {
+        Node node = new Node("FACTOR");
+        node.parent = parent;
+
+        switch (lookahead.type) {
+            case ID:
+                node.children.add(_id(node));
+                break;
+            case INT:
+                node.children.add(_int(node));
+                break;
+            case L_PAR:
+                node.children.add(_lPar(node));
+                node.children.add(intExp(node));
+                node.children.add(_rPar(node));
+                break;
+        }
+
+        return node;
+    }
+
+    // boolean expression
+    private Node boolExp(Node parent) throws ParserException {
+        Node node = new Node("BOOL_EXP");
+        node.parent = parent;
+
+        node.children.add(orFactor(node));
+        node.children.add(boolExp_(node));
+
+        return node;
+    }
+
+    private Node boolExp_(Node parent) throws ParserException {
+        Node node = new Node("BOOL_EXP'");
+        node.parent = parent;
+
+        switch (lookahead.type) {
+            case OR:
+                node.children.add(_or(node));
+                node.children.add(orFactor(node));
+                node.children.add(boolExp_(node));
+                break;
+            default:
+                //nextToken();
+        }
+
+        return node;
+    }
+
+    private Node orFactor(Node parent) throws ParserException {
+        Node node = new Node("OR_FACTOR");
+        node.parent = parent;
+
+        node.children.add(andFactor(node));
+        node.children.add(orFactor_(node));
+
+        return node;
+    }
+
+    private Node orFactor_(Node parent) throws ParserException {
+        Node node = new Node("OR_FACTOR'");
+        node.parent = parent;
+
+        switch (lookahead.type) {
+            case AND:
+                node.children.add(_and(node));
+                node.children.add(andFactor(node));
+                break;
+            default:
+                //nextToken();
+        }
+
+        return node;
+    }
+
+
+    private Node andFactor(Node parent) throws ParserException {
+        Node node = new Node("AND_FACTOR");
+        node.parent = parent;
+
+        switch (lookahead.type) {
+            case NOT:
+                node.children.add(_not(node));
+                node.children.add(boolExp(node));
+                break;
+            default:
+                node.children.add(intExp(node));
+                node.children.add(compOp(node));
+                node.children.add(intExp(node));
+        }
+
+        return node;
+    }
+
+    private Node compOp(Node parent) throws ParserException {
+        Node node = new Node("COMP_OP");
+        node.parent = parent;
+
+        switch (lookahead.type) {
+            case EQ:
+                node.children.add(_eq(node));
+                break;
+            case DIFF:
+                node.children.add(_diff(node));
+                break;
+            case HT:
+                node.children.add(_ht(node));
+                break;
+            case LT:
+                node.children.add(_lt(node));
+                break;
+            case HET:
+                node.children.add(_het(node));
+                break;
+            case LET:
+                node.children.add(_let(node));
+                break;
+        }
+
+        return node;
+    }
+
+    // terminals
+
+    private Node _program(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.PROGRAM)
+            nextToken();
         else
-            primeiro = tokens.get(0);
+            throw new ParserException(String.format("'%s' esperado", "program"));
+
+        return node;
     }
-    //expressao com termo e operador
-     private void expression(){
-        
-        signedTerm();
-        sumOp();
-    }
-     //programa definido na gramatica
-    private void program(){
-        if (primeiro.token == Token.PROGRAM){
+
+    private Node _id(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.ID)
             nextToken();
-            id();
-            sc();
-            block();
-            prd();
-            //encontrar um jeito de finalizar o programa aqui
-        }
-        else{
-            throw new ParserException("Esperado a palavra chave program" 
-                    +primeiro.sequence + "encontrada no lugar");
-          
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "identificador"));
+
+        return node;
     }
-    //ponto e virgula
-    private void sc(){
-        if (primeiro.token == Token.SC){
+
+    private Node _sc(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.SC)
             nextToken();
-        }
-        else{
-            throw new ParserException ("Esperado ; " + primeiro.sequence +
-                    " encontrado no lugar");
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", ";"));
+
+        return node;
     }
-    //ponto final
-    private void prd(){
-        if (primeiro.token == Token.PRD){
+
+    private Node _begin(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.BEGIN)
             nextToken();
-        }
-        else{
-            throw new ParserException ("Esperado . " + primeiro.sequence +
-                    " encontrado no lugar");
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "begin"));
+
+        return node;
     }
-    //bloco
-    private void block(){
-        if (primeiro.token == Token.BEGIN){
+
+    private Node _end(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.END)
             nextToken();
-            constt();
-            var();
-            procedures();
-            stmt();
-            end();
-        }
-        else{
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "end"));
+
+        return node;
     }
-    
-    private void end(){
-        if (primeiro.token == Token.END){
+
+    private Node _procedure(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.PROCEDURE)
             nextToken();
-        }
-        else{
-            throw new ParserException ("Esperado END " + primeiro.sequence +
-                    " encontrado no lugar");
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "procedure"));
+
+        return node;
     }
-    private void stmt(){
-        if (primeiro.token == Token.CALL){
-            call();
-            stmt();
-        }
-        else if (primeiro.token == Token.WRITE){
-            write();
-            stmt();
-        }
-        else if (primeiro.token == Token.READ){
-            read();
-            stmt();
-        }
-        else if (primeiro.token == Token.IF){
-            ift();
-            stmt();
-        }
-        else if (primeiro.token == Token.WHILE){
-            whilet();
-            stmt();
-        }
-        else if (primeiro.token == Token.ATRB){
-            atrb();
-        }
-        else{
-        }
-    }
-        
-    private void call(){
-        if (primeiro.token == Token.CALL){
+
+    private Node _var(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.VAR)
             nextToken();
-            id();
-            sc();
-        }
-        else{
-            throw new ParserException ("Esperado CALL " + primeiro.sequence +
-                    " encontrado no lugar");
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "var"));
+
+        return node;
     }
-    
-    private void write(){
-        if (primeiro.token == Token.WRITE){
+
+    private Node _comma(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.COMMA)
             nextToken();
-            id();
-            sc();
-        }
-        else{
-            throw new ParserException ("Esperado WRITE " + primeiro.sequence +
-                    " encontrado no lugar");
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", ","));
+
+        return node;
     }
-    
-    private void read(){
-        if (primeiro.token == Token.READ){
+
+    private Node _attrOp(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.ATTR_OP)
             nextToken();
-            id();
-            sc();
-        }
-        else{
-            throw new ParserException ("Esperado READ " + primeiro.sequence +
-                    " encontrado no lugar");
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "="));
+
+        return node;
     }
-    
-    private void ift(){
-        if (primeiro.token == Token.IF){
+
+    private Node _call(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.CALL)
             nextToken();
-            logic();
-            subif();
-        }
-        else{
-            throw new ParserException ("Esperado IF " + primeiro.sequence +
-                    " encontrado no lugar");
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "call"));
+
+        return node;
     }
-    
-    private void subif(){
-        if (primeiro.token == Token.THEN){
+
+    private Node _print(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.PRINT)
             nextToken();
-            block();
-            if (primeiro.token == Token.SC){
-                sc();
-            }
-            else if (primeiro.token == Token.ELSE){
-                elset();
-            }
-            else{
-                throw new ParserException ("Esperado ; ou ELSE " + primeiro.sequence +
-                    " encontrado no lugar");
-            }
-        }
-        else{
-            throw new ParserException ("Esperado IF " + primeiro.sequence +
-                    " encontrado no lugar");
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "print"));
+
+        return node;
     }
-    
-    private void elset(){
-        if (primeiro.token == Token.ELSE){
+
+    private Node _while(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.WHILE)
             nextToken();
-            block();
-        }
-        else{
-            throw new ParserException ("Esperado ELSE " + primeiro.sequence +
-                    " encontrado no lugar");
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "while"));
+
+        return node;
     }
-    
-    private void whilet(){
-        if (primeiro.token == Token.WHILE){
+
+    private Node _do(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.DO)
             nextToken();
-            logic();
-            dot();
-            block();
-            sc();
-        }
-        else{
-            throw new ParserException ("Esperado WHILE " + primeiro.sequence +
-                    " encontrado no lugar");
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "do"));
+
+        return node;
     }
-    
-    private void dot(){
-        if (primeiro.token == Token.DO){
+
+    private Node _if(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.IF)
             nextToken();
-        }
-        else{
-            throw new ParserException ("Esperado DO " + primeiro.sequence +
-                    " encontrado no lugar");
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "if"));
+
+        return node;
     }
-    
-    
-    private void atrb(){
-        if (primeiro.token == Token.ATRB){
-            id();
-            atr();
-            expression();
-        }
-        else{
-            throw new ParserException ("Esperado atrb " + primeiro.sequence +
-                    " encontrado no lugar");
-        }
-    }
-    
-    
-    private void atr(){
-        if (primeiro.token == Token.ATR){
+
+    private Node _then(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.THEN)
             nextToken();
-        }
-        else{
-            throw new ParserException ("Esperado aspas " + primeiro.sequence +
-                    " encontrado no lugar");
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "then"));
+
+        return node;
     }
-    private void logic(){
-        if (primeiro.token == Token.ID){
-            id();
-            logop();
-            if (primeiro.token == Token.ID){
-                id();
-            }
-            else if (primeiro.token == Token.NUMBER){
-                number();
-            }
-        }
-        else if(primeiro.token ==Token.NUMBER){
-            number();
-            logop();
-            if (primeiro.token == Token.ID){
-                id();
-            }
-            else if (primeiro.token == Token.NUMBER){
-                number();
-            }
-        }
-        else if (primeiro.token == Token.TRUE){
+
+    private Node _else(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.ELSE)
             nextToken();
-        }
-        else if (primeiro.token == Token.FALSE){
+        else
+            throw new ParserException(String.format("'%s' esperado", "else"));
+
+        return node;
+    }
+
+    private Node _subOp(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.SUB_OP)
             nextToken();
-        }
-        else{
-            throw new ParserException ("Esperado letra, numero, true ou false, " + primeiro.sequence +
-                    " encontrado no lugar");
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "-"));
+
+        return node;
     }
-    
-    private void logop(){
-        if (primeiro.token == Token.LOGOP){
+
+    private Node _sumOp(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.SUM_OP)
             nextToken();
-        }
-        else{
-            throw new ParserException ("Esperado ==, !=, <, >, <= ou >=, " + primeiro.sequence +
-                    " encontrado no lugar");
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "+"));
+
+        return node;
     }
-    
-    
-    private void number(){
-        if (primeiro.token == Token.NUMBER){
+
+    private Node _divOp(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.DIV_OP)
             nextToken();
-            numberOp();
-        }
-        else{
-            throw new ParserException ("Esperado numero, " + primeiro.sequence +
-                    " encontrado no lugar");
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "/"));
+
+        return node;
     }
-    
-    private void numberOp(){
-        if (primeiro.token == Token.NUMBER){
+
+    private Node _multOp(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.MULT_OP)
             nextToken();
-            numberOp();
-        }
-        else{
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "*"));
+
+        return node;
     }
-    
-    private void procedures(){
-        if (primeiro.token == Token.PROCEDURE){
-            procedure();
-            procedures();
-        }
-        else{
-            
-        }
-    }
-    
-    private void procedure(){
-        if (primeiro.token == Token.PROCEDURE){
+
+    private Node _lPar(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.L_PAR)
             nextToken();
-            id();
-            sc();
-            block();
-            sc();
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "("));
+
+        return node;
     }
-    
-    
-    private void var(){
-        if (primeiro.token == Token.VAR){
+
+    private Node _rPar(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.R_PAR)
             nextToken();
-            var_expr();
-            sc();
-        }
-        else{
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", ")"));
+
+        return node;
     }
-    
-    private void var_expr(){
-        if (primeiro.token==Token.ID){
-            id();
-            var_exprOp();
-        }
-        else{
-            throw new ParserException ("Espera uma letra ou conjunto de letras, "
-                + primeiro.sequence+ " encontrado no lugar");
-        }
-    }
-    
-    private void var_exprOp(){
-        if (primeiro.token == Token.COMMA){
-            comma();
-            var_expr();
-        }
-        else{
-            
-        }
-    }
-    
-    
-    //definir as funcoes do bloco
-    private void constt(){
-        if (primeiro.token==Token.CONST){
+
+    private Node _int(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.INT)
             nextToken();
-            const_expr();
-            sc();
-        }
-        else{
-        }
+        else
+            throw new ParserException(String.format("'%s' esperado", "integer"));
+
+        return node;
     }
-    
-    private void const_expr(){
-        if (primeiro.token==Token.ID){
-            id();
-            atr();
-            value();
-            const_exprOp();
-        }
-    }
-    
-    private void const_exprOp(){
-        if (primeiro.token==Token.COMMA){
-            comma();
-            const_expr();
-        }
-        else{
-            
-        }
-    }
-    
-    private void comma(){
-        if (primeiro.token == Token.COMMA){
+
+    private Node _or(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.OR)
             nextToken();
-        }
-        else{
-            throw new ParserException ("Esperado , " + primeiro.sequence +
-                    " encontrado no lugar");
+        else
+            throw new ParserException(String.format("'%s' esperado", "||"));
+
+        return node;
+    }
+
+    private Node _and(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.AND)
+            nextToken();
+        else
+            throw new ParserException(String.format("'%s' esperado", "&&"));
+
+        return node;
+    }
+
+    private Node _not(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.NOT)
+            nextToken();
+        else
+            throw new ParserException(String.format("'%s' esperado", "!"));
+
+        return node;
+    }
+
+    private Node _eq(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.EQ)
+            nextToken();
+        else
+            throw new ParserException(String.format("'%s' esperado", "=="));
+
+        return node;
+    }
+
+    private Node _diff(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.DIFF)
+            nextToken();
+        else
+            throw new ParserException(String.format("'%s' esperado", "!="));
+
+        return node;
+    }
+
+    private Node _ht(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.HT)
+            nextToken();
+        else
+            throw new ParserException(String.format("'%s' esperado", ">"));
+
+        return node;
+    }
+
+    private Node _lt(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.LT)
+            nextToken();
+        else
+            throw new ParserException(String.format("'%s' esperado", "<"));
+
+        return node;
+    }
+
+    private Node _het(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.HET)
+            nextToken();
+        else
+            throw new ParserException(String.format("'%s' esperado", ">="));
+
+        return node;
+    }
+
+    private Node _let(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.LET)
+            nextToken();
+        else
+            throw new ParserException(String.format("'%s' esperado", "<="));
+
+        return node;
+    }
+
+
+    private Node _period(Node parent) throws ParserException {
+        Node node = new Leaf(lookahead.type, lookahead.value);
+        node.parent = parent;
+
+        if (lookahead.type == Token.Type.PERIOD)
+            nextToken();
+        else
+            throw new ParserException(String.format("'%s' esperado", "."));
+
+        return node;
+    }
+
+    class Node {
+        public String id;
+        public List<Node> children;
+        public Node parent;
+
+        public Node(String id) {
+            this.id = id;
+            children = new ArrayList<Node>();
         }
     }
-            
-    
-    
-    
-    
-     //soma ou subtracao
-    private void sumOp(){
-        if (primeiro.token == Token.OPER){
-            nextToken();
-            term();
-            sumOp();
-        }
-        else{
+
+    class Leaf extends Node {
+        public Token.Type type;
+        public String lexval;
+
+        public Leaf(Token.Type type, String lexval) {
+            super("");
+            this.type = type;
+            this.lexval = lexval;
         }
     }
-    //termo com sinal
-    private void signedTerm(){
-        if (primeiro.token == Token.OPER){
-            nextToken();
-            term();
-        }
-        else{
-            term();
-        }
-    }
-    
-    //primeiro termo a aparecer
-     private void term() {
-        factor();
-        termOp();
-    }
-     //termo opcional
-    private void termOp() {
-        if (primeiro.token == Token.OPERMULTDIV) {
-            nextToken();
-            signedFactor();
-            termOp();
-        } else {
-        }
-    }
-    //fator com sinal
-    private void signedFactor() {
-        if (primeiro.token == Token.OPERMULTDIV) {
-            nextToken();
-            factor();
-        } else {
-            factor();
-        }
-    }
-    //fator, pegando variavel, expressao ou constante
-    private void factor() {
-        if (primeiro.token == Token.ID){
-            nextToken();
-            id();
-        }
-        else if (primeiro.token == Token.VALUE) {
-            nextToken();
-            value();
-        }
-            
-        else if (primeiro.token == Token.LPAR){
-            nextToken();
-            expression();
-            if (primeiro.token == Token.RPAR){
-                nextToken();
-                term();
-            }
-            else {
-                throw new ParserException("Era esperado um ( porem foi encontrado "
-                        + primeiro.sequence + " no lugar");
-            }
-        }
-        else {
-            throw new ParserException("Era esperado um valor ou uma expressao porem"
-                        +primeiro.sequence + "foi encontrado no lugar");
-                    }
-    }
-    //numero
-    private void value() {
-        if (primeiro.token == Token.NUMBER) {
-            nextToken();
-        } else if (primeiro.token == Token.EXPR) {
-            nextToken();
-            expression();
-        } else {
-            throw new ParserException(
-                    "Simbolo " + primeiro.sequence + " inesperado encontrado");
-        }
-    }
-    //letra
-    private void id() {
-        if (primeiro.token == Token.LETTER) {
-            nextToken();
-            idOp();
-        } else {
-            throw new ParserException(
-                    "Simbolo " + primeiro.sequence + " inesperado encontrado");
-        }
-    }
-    //especie de laco que permite um conjunto de letras
-    private void idOp() {
-        if (primeiro.token == Token.LETTER) {
-            nextToken();
-            idOp();
-        } 
-        else {
-        }
-    }
-    
 }
