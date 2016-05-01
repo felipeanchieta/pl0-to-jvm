@@ -23,6 +23,7 @@ log/
 target/
 
 # Ignore Netbeans generated files
+nbproject/
 nbproject/private/
 build/
 nbbuild/
@@ -30,3 +31,5 @@ dist/
 nbdist/
 nbactions.xml
 .nb-gradle/
+nbbuild.xml
+manifest.mf
