@@ -1,3 +1,4 @@
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -5,7 +6,6 @@ public class Parser {
 
     List<Token> tokens;
     Token lookahead;
-
     public Parser(List<Token> tokens) {
         this.tokens = tokens;
         nextToken();
@@ -14,6 +14,9 @@ public class Parser {
     //pega a lista de tokens do tokenizer
     public void parse() throws ParserException {
         Node root = main();
+
+        SemanticAnalyser.postOrder(root);
+
     }
 
     public void nextToken() {
@@ -73,7 +76,7 @@ public class Parser {
                 node.children.add(mainCode(node));
                 break;
             default:
-                //nextToken();
+            //nextToken();
         }
 
         return node;
@@ -105,7 +108,7 @@ public class Parser {
                 node.children.add(code(node));
                 break;
             default:
-                //nextToken();
+            //nextToken();
         }
 
         return node;
@@ -187,7 +190,7 @@ public class Parser {
                 node.children.add(list__(node));
                 break;
             default:
-                //nextToken();
+            //nextToken();
         }
 
         return node;
@@ -213,7 +216,7 @@ public class Parser {
                 node.children.add(list(node));
                 break;
             default:
-                //nextToken();
+            //nextToken();
         }
 
         return node;
@@ -287,7 +290,7 @@ public class Parser {
                 node.children.add(block(node));
                 break;
             default:
-                //nextToken();
+            //nextToken();
         }
 
         return node;
@@ -320,7 +323,7 @@ public class Parser {
                 node.children.add(intExp_(node));
                 break;
             default:
-                //nextToken();
+            //nextToken();
         }
 
         return node;
@@ -352,7 +355,7 @@ public class Parser {
                 node.children.add(term_(node));
                 break;
             default:
-                //nextToken();
+            //nextToken();
         }
 
         return node;
@@ -401,7 +404,7 @@ public class Parser {
                 node.children.add(boolExp_(node));
                 break;
             default:
-                //nextToken();
+            //nextToken();
         }
 
         return node;
@@ -427,12 +430,11 @@ public class Parser {
                 node.children.add(andFactor(node));
                 break;
             default:
-                //nextToken();
+            //nextToken();
         }
 
         return node;
     }
-
 
     private Node andFactor(Node parent) throws ParserException {
         Node node = new Node("AND_FACTOR");
@@ -481,15 +483,16 @@ public class Parser {
     }
 
     // terminals
-
     private Node _program(Node parent) throws ParserException {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.PROGRAM)
+        if (lookahead.type == Token.Type.PROGRAM) {
+
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "program"));
+        }
 
         return node;
     }
@@ -498,10 +501,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.ID)
+        if (lookahead.type == Token.Type.ID) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "identificador"));
+        }
 
         return node;
     }
@@ -510,10 +514,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.SC)
+        if (lookahead.type == Token.Type.SC) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", ";"));
+        }
 
         return node;
     }
@@ -522,10 +527,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.BEGIN)
+        if (lookahead.type == Token.Type.BEGIN) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "begin"));
+        }
 
         return node;
     }
@@ -534,10 +540,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.END)
+        if (lookahead.type == Token.Type.END) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "end"));
+        }
 
         return node;
     }
@@ -546,10 +553,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.PROCEDURE)
+        if (lookahead.type == Token.Type.PROCEDURE) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "procedure"));
+        }
 
         return node;
     }
@@ -558,10 +566,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.VAR)
+        if (lookahead.type == Token.Type.VAR) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "var"));
+        }
 
         return node;
     }
@@ -570,10 +579,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.COMMA)
+        if (lookahead.type == Token.Type.COMMA) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", ","));
+        }
 
         return node;
     }
@@ -582,10 +592,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.ATTR_OP)
+        if (lookahead.type == Token.Type.ATTR_OP) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "="));
+        }
 
         return node;
     }
@@ -594,10 +605,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.CALL)
+        if (lookahead.type == Token.Type.CALL) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "call"));
+        }
 
         return node;
     }
@@ -606,10 +618,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.PRINT)
+        if (lookahead.type == Token.Type.PRINT) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "print"));
+        }
 
         return node;
     }
@@ -618,10 +631,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.WHILE)
+        if (lookahead.type == Token.Type.WHILE) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "while"));
+        }
 
         return node;
     }
@@ -630,10 +644,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.DO)
+        if (lookahead.type == Token.Type.DO) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "do"));
+        }
 
         return node;
     }
@@ -642,10 +657,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.IF)
+        if (lookahead.type == Token.Type.IF) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "if"));
+        }
 
         return node;
     }
@@ -654,10 +670,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.THEN)
+        if (lookahead.type == Token.Type.THEN) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "then"));
+        }
 
         return node;
     }
@@ -666,10 +683,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.ELSE)
+        if (lookahead.type == Token.Type.ELSE) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "else"));
+        }
 
         return node;
     }
@@ -678,10 +696,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.SUB_OP)
+        if (lookahead.type == Token.Type.SUB_OP) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "-"));
+        }
 
         return node;
     }
@@ -690,10 +709,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.SUM_OP)
+        if (lookahead.type == Token.Type.SUM_OP) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "+"));
+        }
 
         return node;
     }
@@ -702,10 +722,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.DIV_OP)
+        if (lookahead.type == Token.Type.DIV_OP) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "/"));
+        }
 
         return node;
     }
@@ -714,10 +735,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.MULT_OP)
+        if (lookahead.type == Token.Type.MULT_OP) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "*"));
+        }
 
         return node;
     }
@@ -726,10 +748,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.L_PAR)
+        if (lookahead.type == Token.Type.L_PAR) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "("));
+        }
 
         return node;
     }
@@ -738,10 +761,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.R_PAR)
+        if (lookahead.type == Token.Type.R_PAR) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", ")"));
+        }
 
         return node;
     }
@@ -750,10 +774,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.INT)
+        if (lookahead.type == Token.Type.INT) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "integer"));
+        }
 
         return node;
     }
@@ -762,10 +787,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.OR)
+        if (lookahead.type == Token.Type.OR) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "||"));
+        }
 
         return node;
     }
@@ -774,10 +800,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.AND)
+        if (lookahead.type == Token.Type.AND) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "&&"));
+        }
 
         return node;
     }
@@ -786,10 +813,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.NOT)
+        if (lookahead.type == Token.Type.NOT) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "!"));
+        }
 
         return node;
     }
@@ -798,10 +826,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.EQ)
+        if (lookahead.type == Token.Type.EQ) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "=="));
+        }
 
         return node;
     }
@@ -810,10 +839,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.DIFF)
+        if (lookahead.type == Token.Type.DIFF) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "!="));
+        }
 
         return node;
     }
@@ -822,10 +852,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.HT)
+        if (lookahead.type == Token.Type.HT) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", ">"));
+        }
 
         return node;
     }
@@ -834,10 +865,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.LT)
+        if (lookahead.type == Token.Type.LT) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "<"));
+        }
 
         return node;
     }
@@ -846,10 +878,11 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.HET)
+        if (lookahead.type == Token.Type.HET) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", ">="));
+        }
 
         return node;
     }
@@ -858,28 +891,30 @@ public class Parser {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.LET)
+        if (lookahead.type == Token.Type.LET) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "<="));
+        }
 
         return node;
     }
-
 
     private Node _period(Node parent) throws ParserException {
         Node node = new Leaf(lookahead.type, lookahead.value);
         node.parent = parent;
 
-        if (lookahead.type == Token.Type.PERIOD)
+        if (lookahead.type == Token.Type.PERIOD) {
             nextToken();
-        else
+        } else {
             throw new ParserException(String.format("'%s' esperado", "."));
+        }
 
         return node;
     }
 
     class Node {
+
         public String id;
         public List<Node> children;
         public Node parent;
@@ -891,6 +926,7 @@ public class Parser {
     }
 
     class Leaf extends Node {
+
         public Token.Type type;
         public String lexval;
 

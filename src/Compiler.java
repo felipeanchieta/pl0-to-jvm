@@ -1,29 +1,37 @@
+
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Compiler {
 
-	private static ErrorType errorType;
+    public static void main(String[] args) throws ParserException {
+        String linha;
+        List<Token> tokensAux;
+        List<Token> tokensFinal = new ArrayList<>();
 
-	public static void main(String[] args) {
-		Compiler compiler = new Compiler();
-		compiler.run(args);
-	}
+        try {
+            BufferedReader alg = new BufferedReader(new FileReader(""));
 
-	private static void run(String[] args) {
-		if (args.length < 1) {
-			System.err.println(Error.quickError(errorType.LINE_ARGUMENT));
-			System.exit(-1);
-		} else {
-			startCompilerProcesses(args[0]);
-		}
-	}
+            while (alg.ready()) {
+                linha = alg.readLine();
+                tokensAux = Lexer.lex(linha);
+                for (Token t : tokensAux) {
+                    tokensFinal.add(t);
+                }
+            }
 
-	private static void startCompilerProcesses(String fileName) {
-		File file = null; 
-		try {
-			file = new File(fileName);
-		} catch (Exception e) {
-			System.err.println("Fucked");
-		}
-	}
+            tokensFinal.add(new Token(Token.Type.EOF, "$"));
+
+            alg.close();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
+        Parser parser = new Parser(tokensFinal);
+        parser.parse();
+        
+    }
 }
