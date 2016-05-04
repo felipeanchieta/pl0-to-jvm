@@ -1,0 +1,13 @@
+program TestCode;
+
+begin 
+    var a = 1, b = 2, d, c = 3;
+    
+    while a + b < c do
+    begin
+        while a + c == b + 2 do
+        begin
+            a = a + 1;
+        end
+    end
+end .

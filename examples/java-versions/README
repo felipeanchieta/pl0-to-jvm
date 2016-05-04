@@ -1,0 +1,7 @@
+// visualizar o bytecode gerado pelo javac em ASCII
+
+// windows
+cls && javac Test.java & javap -c Test
+
+// linuxs
+reset && javac Test.java & javap -c Test

@@ -1,0 +1,19 @@
+**********************************************
+*      PL/0 TO JAVA BYTECODE TRANSLATOR      *
+**********************************************
+
+1) If you have Maven 3 installed in your computer,
+just run
+
+mvn compile
+mvn package
+
+in order to generate the JAR in target/ folder.
+
+2) You can run the JAR using
+
+java -jar pl0compiler-1.0-RELEASE.jar <filename>
+
+WARNING: be sure of being in target/ folder.
+
+3) The example files are in examples/ folders.

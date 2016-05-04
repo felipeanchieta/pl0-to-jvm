@@ -1,0 +1,15 @@
+program TestCode;
+
+begin 
+    var a = 1, b = 2, c = 3, d;
+
+    if a > 6 || b < 7 && c > 8 then
+    begin
+        var x = 9;
+    end
+    
+    while a < c do
+    begin
+        a = a + 1;
+    end
+end .

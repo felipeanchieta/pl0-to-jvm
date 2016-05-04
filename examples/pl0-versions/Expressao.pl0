@@ -1,0 +1,7 @@
+program TestCode;
+
+begin 
+    var a = 1, b = 2, x;
+    
+    x = (a + 3) * b;
+end .
