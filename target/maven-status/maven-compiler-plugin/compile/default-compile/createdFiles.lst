@@ -1,0 +1,12 @@
+pl0compiler/common/Type.class
+pl0compiler/translator/Instruction.class
+pl0compiler/common/Token.class
+pl0compiler/translator/Translator.class
+pl0compiler/parser/Parser$1.class
+pl0compiler/translator/Translator$1.class
+pl0compiler/lexer/Lexer.class
+pl0compiler/parser/Parser.class
+pl0compiler/main/Compiler.class
+pl0compiler/common/Leaf.class
+pl0compiler/parser/ParserException.class
+pl0compiler/common/Node.class
