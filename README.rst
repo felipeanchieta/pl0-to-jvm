@@ -1,4 +1,4 @@
-PL/0 2 Java Bytecode Translator
+PL/0 -> Java Bytecode Translator
 ==============================================
 
 How to build
